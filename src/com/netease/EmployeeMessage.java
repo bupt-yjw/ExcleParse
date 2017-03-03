@@ -6,6 +6,9 @@ public class EmployeeMessage {
 	private String firstLevDep;
 	private String secondLevDep;
 	private String thirdLevDep;
+	private int timeAfter930;
+	private int timeAfter940;
+	private int timeAfter950;
 	private int timeAfter10;
 	private int timeLessThan9;
 	private int timeAbsence;
@@ -73,5 +76,30 @@ public class EmployeeMessage {
 	public void setTimeIncomplete(int timeIncomplete) {
 		this.timeIncomplete = timeIncomplete;
 	}
+
+	public int getTimeAfter930() {
+		return timeAfter930;
+	}
+
+	public void setTimeAfter930(int timeAfter930) {
+		this.timeAfter930 = timeAfter930;
+	}
+
+	public int getTimeAfter940() {
+		return timeAfter940;
+	}
+
+	public void setTimeAfter940(int timeAfter940) {
+		this.timeAfter940 = timeAfter940;
+	}
+
+	public int getTimeAfter950() {
+		return timeAfter950;
+	}
+
+	public void setTimeAfter950(int timeAfter950) {
+		this.timeAfter950 = timeAfter950;
+	}
+	
 
 }

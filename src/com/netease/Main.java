@@ -34,7 +34,8 @@ public class Main {
 	private static EmployeeMessage employeeMessage;
 	private static boolean changeVal = false;
 	private static StringBuffer sb ;
-
+	private static int i=0;//定位错误使用
+	
 	public static void main(String[] args) {
 
 		final JFrame jFrame = new JFrame("标题");
@@ -108,17 +109,24 @@ public class Main {
 			sb.append("考勤表.xls");
 			// 循环读取数据
 			for (int rIndex = firstRowIndex; rIndex <= lastRowIndex; rIndex++) {
+			
 				Row row = null;
+				try {
 				if (sheet.getRow(rIndex) != null
 						&& sheet.getRow(rIndex).getCell(4).toString().length() > 0) {
 					row = sheet.getRow(rIndex);// 得到一行数据
 					if (row.getCell(4) != null) {
 						number = row.getCell(4).toString();
 						if (!map.containsKey(number)) {
+							String s = null;
+							if(row.getCell(8)==null){
+								s="";
+							}else{
+								s=row.getCell(8).toString();
+							}
 							map.put(number, new EmployeeMessage(number, row
 									.getCell(3).toString(), row.getCell(6)
-									.toString(), row.getCell(7).toString(), row
-									.getCell(8).toString()));
+									.toString(), row.getCell(7).toString(), s));
 						}
 					}
 
@@ -132,15 +140,13 @@ public class Main {
 								.getTimeAbsence() + 1);
 						map.put(number, employeeMessage);
 
-					} else if (row.getCell(2).toString().contains("休息")
-							|| row.getCell(2).toString().contains("调休假")) {
+					} else if (row.getCell(2).toString().contains("年假")||row.getCell(2).toString().contains("休息")
+							|| row.getCell(2).toString().contains("调休假")||row.getCell(2).toString().contains("有薪病假")) {
 						continue;
 					} else if (row.getCell(2).toString().contains("缺下")) {
-						if (Integer.valueOf(row.getCell(15).toString()
-								.split(":")[0]) >= 10) {
-							employeeMessage.setTimeAfter10(employeeMessage
-									.getTimeAfter10() + 1);
-						}
+						lateDay(row);
+						
+						
 						employeeMessage.setTimeIncomplete(employeeMessage
 								.getTimeIncomplete() + 1);
 						map.put(number, employeeMessage);
@@ -149,38 +155,42 @@ public class Main {
 								.getTimeIncomplete() + 1);
 						map.put(number, employeeMessage);
 					} else {
-						if (row.getCell(14).toString().equals("0")
-								|| row.getCell(15).toString().length() <= 0) {
+						
+							if (row.getCell(14)==null||row.getCell(14).toString().equals("0")
+									||row.getCell(14).toString().equals("")|| row.getCell(15).toString().length() <= 0) {
 
-						} else {
-							if (Double.valueOf(row.getCell(14).toString())
-									.compareTo(9.0) < 0) {
-								employeeMessage
-										.setTimeLessThan9(employeeMessage
-												.getTimeLessThan9() + 1);
-								changeVal = true;
+							} else {
+								if( (Double.valueOf(row.getCell(14).toString())
+										.compareTo(9.0) < 0)||(Integer.valueOf(row.getCell(15).toString()
+												.split(":")[0]) >= 10 && Double.valueOf(row.getCell(14).toString())
+												.compareTo(10.0) < 0 ) ){
+									employeeMessage
+											.setTimeLessThan9(employeeMessage
+													.getTimeLessThan9() + 1);
+									changeVal = true;
+								}
+							lateDay(row);
+								if (changeVal) {
+									changeVal = false;
+									map.put(number, employeeMessage);
+								}
 							}
-							if (Integer.valueOf(row.getCell(15).toString()
-									.split(":")[0]) >= 10) {
-//System.out.println("-------"+row.getCell(15).toString());
-								employeeMessage.setTimeAfter10(employeeMessage
-										.getTimeAfter10() + 1);
-								changeVal = true;
-							}
-							if (changeVal) {
-								changeVal = false;
-								map.put(number, employeeMessage);
-							}
-						}
 
 					}
 
 				} else {
 					continue;
 				}
-/*System.out.println(row.getCell(1).toString()
-						+ row.getCell(2).toString());*/
-
+//主要用做调试定位错误行				
+/*System.out.println(row.getCell(0).toString()+row.getCell(1).toString()
+						+ row.getCell(2).toString()+row.getCell(3).toString());
+System.out.println("---------"+i);
+i++;*/
+				} catch (Exception e) {
+System.out.println("wyj"+row.getCell(0)+"---"+row.getCell(1)+"---"+row.getCell(2)+"---"+row.getCell(3));
+System.out.println(e);
+					break;
+				}
 			}
 		} catch (FileNotFoundException e) {
 			e.printStackTrace();
@@ -188,6 +198,36 @@ public class Main {
 			e.printStackTrace();
 		}
 		return map;
+	}
+
+	private static void lateDay(Row row) {
+		 if(Integer.valueOf(row.getCell(15).toString()
+					.split(":")[0]) >= 10) {
+				 if(Integer.valueOf(row.getCell(15).toString()
+					.split(":")[1]) > 0){
+					 employeeMessage.setTimeAfter10(employeeMessage
+								.getTimeAfter10() + 1); 
+				 }else{
+					 employeeMessage.setTimeAfter950(employeeMessage
+								.getTimeAfter950() + 1);
+				 }
+			}else if (Integer.valueOf(row.getCell(15).toString()
+					.split(":")[0]) == 9 && Integer.valueOf(row.getCell(15).toString()
+							.split(":")[1]) > 50 ) {
+				employeeMessage.setTimeAfter950(employeeMessage
+						.getTimeAfter950() + 1);
+			}else if (Integer.valueOf(row.getCell(15).toString()
+					.split(":")[0]) == 9 && Integer.valueOf(row.getCell(15).toString()
+							.split(":")[1]) > 40 ) {
+				employeeMessage.setTimeAfter940(employeeMessage
+						.getTimeAfter940() + 1);
+			}else if (Integer.valueOf(row.getCell(15).toString()
+					.split(":")[0]) == 9 && Integer.valueOf(row.getCell(15).toString()
+							.split(":")[1]) > 30 ) {
+				employeeMessage.setTimeAfter930(employeeMessage
+						.getTimeAfter930() + 1);
+			}
+		 changeVal = true;
 	}
 
 	public static String wirteExcel(Map<String, EmployeeMessage> map,
@@ -203,7 +243,7 @@ public class Main {
 		HSSFCellStyle style = wb.createCellStyle();
 		// HSSFDataFormat dataFormat = wb.createDataFormat();日期转换，可以不用
 		style.setAlignment(HSSFCellStyle.ALIGN_LEFT); // 创建一个左对齐格式
-
+		
 		HSSFCell cell = row.createCell(0);
 		cell.setCellValue("工号");
 		cell.setCellStyle(style);
@@ -220,15 +260,24 @@ public class Main {
 		cell.setCellValue("三级部门");
 		cell.setCellStyle(style);
 		cell = row.createCell(5);
-		cell.setCellValue("10点后打卡天数");
+		cell.setCellValue("9:30后打卡天数");
 		cell.setCellStyle(style);
 		cell = row.createCell(6);
-		cell.setCellValue("刷卡不满9小时天数");
+		cell.setCellValue("9:40后打卡天数");
 		cell.setCellStyle(style);
 		cell = row.createCell(7);
-		cell.setCellValue("缺勤天数");
+		cell.setCellValue("9:50后打卡天数");
 		cell.setCellStyle(style);
 		cell = row.createCell(8);
+		cell.setCellValue("10点后打卡天数");
+		cell.setCellStyle(style);
+		cell = row.createCell(9);
+		cell.setCellValue("有效工作时间不满8小时");
+		cell.setCellStyle(style);
+		cell = row.createCell(10);
+		cell.setCellValue("缺勤天数");
+		cell.setCellStyle(style);
+		cell = row.createCell(11);
 		cell.setCellValue("刷卡不完整天数");
 		cell.setCellStyle(style);
 
@@ -246,10 +295,13 @@ public class Main {
 			row.createCell(2).setCellValue(val.getFirstLevDep());
 			row.createCell(3).setCellValue(val.getSecondLevDep());
 			row.createCell(4).setCellValue(val.getThirdLevDep());
-			row.createCell(5).setCellValue(val.getTimeAfter10());
-			row.createCell(6).setCellValue(val.getTimeLessThan9());
-			row.createCell(7).setCellValue(val.getTimeAbsence());
-			row.createCell(8).setCellValue(val.getTimeIncomplete());
+			row.createCell(5).setCellValue(val.getTimeAfter930());
+			row.createCell(6).setCellValue(val.getTimeAfter940());
+			row.createCell(7).setCellValue(val.getTimeAfter950());
+			row.createCell(8).setCellValue(val.getTimeAfter10());
+			row.createCell(9).setCellValue(val.getTimeLessThan9());
+			row.createCell(10).setCellValue(val.getTimeAbsence());
+			row.createCell(11).setCellValue(val.getTimeIncomplete());
 
 		}
 
@@ -267,7 +319,7 @@ public class Main {
 			}
 			// FileOutputStream fout = new FileOutputStream(path.toString());
 			//FileOutputStream fout = new FileOutputStream("E:/考勤表.xls");
-System.out.println(sb.toString());
+//System.out.println(sb.toString());
 			FileOutputStream fout = new FileOutputStream(sb.toString());
 			wb.write(fout);
 			fout.close();
