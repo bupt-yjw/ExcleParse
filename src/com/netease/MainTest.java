@@ -30,7 +30,7 @@ import org.apache.poi.ss.usermodel.Sheet;
 import org.apache.poi.ss.usermodel.Workbook;
 import org.apache.poi.xssf.usermodel.XSSFWorkbook;
 
-public class Main {
+public class MainTest {
 	
 	private static String number;  //工号
 	private static EmployeeMessage employeeMessage;   //存储每个员工的信息
@@ -41,7 +41,9 @@ public class Main {
 	private static int normalDay = 0;		//正常工作天数
 	private static String jobNumber = null;	//存储工号
 	private static BigDecimal b;
-	private static Map<String, EmployeeMessage> map = new HashMap<String, EmployeeMessage>();
+	private static Map<String, EmployeeMessage> map = new HashMap<String, EmployeeMessage>();//存放每个员工统计好的信息
+	private static int firstRowIndex; // 记录第一行的下标，此处加2目的是为了避免读取活动首行
+	private static int lastRowIndex; // 记录最后一行的下标 ，他们之差代表总行数
 	
 	public static void main(String[] args) {
 
@@ -60,13 +62,14 @@ public class Main {
 				String[] filelist = file.list();
 				for (int i = 0; i < filelist.length; i++) {
 					File readfile = new File(filepath + "\\" + filelist[i]);
-					Map<String, EmployeeMessage> map1 = new HashMap<String, EmployeeMessage>();
+					//Map<String, EmployeeMessage> map1 = new HashMap<String, EmployeeMessage>();
 					try {
-						map1 = readExcel(readfile);
+						//map = readExcel(readfile);
+						 readExcel(readfile);
 					} catch (Exception e1) {
 						e1.printStackTrace();
 					}
-					wirteExcel(map1, "wyj");
+					wirteExcel(map, "wyj");
 					jButton.setEnabled(false);
 					jButton.setBackground(Color.green);
 					jFrame.setDefaultCloseOperation(JFrame.DISPOSE_ON_CLOSE);
@@ -76,45 +79,25 @@ public class Main {
 			}
 		});
 
-		/*File file = new File("E:/1.xls");
-
-		try {
-			Map<String, EmployeeMessage> map1 = new HashMap<String, EmployeeMessage>();
-			map1 = readExcel(file);
-			System.out.println("length" + map1.size());
-			wirteExcel(map1, "wyj");
-		} catch (Exception e) {
-			e.printStackTrace();
-		}*/
 	}
 
-	public static Map<String, EmployeeMessage> readExcel(File file1)
+	public static Map<String, EmployeeMessage> readExcel(File file)
 			throws Exception {
-		
 		
 		Workbook wb = null;
 		try {
-			InputStream inputStream = new FileInputStream(file1);
-			String fileName = file1.getName();
+			InputStream inputStream = new FileInputStream(file);
+			String fileName = file.getName();
 			if (fileName.endsWith("xls")) {
 				wb = new HSSFWorkbook(inputStream); // 解析xls格式
 			} else if (fileName.endsWith("xlsx")) {
 				wb = new XSSFWorkbook(inputStream); // 解析xlsx格式
 			}
+			
 			Sheet sheet = wb.getSheetAt(0); // 第一个工作表
 
-			int firstRowIndex = sheet.getFirstRowNum() + 1; // 得到第一行的下标，此处加2目的是为了避免读取活动首行
-			int lastRowIndex = sheet.getLastRowNum(); // 得到最后一行的下标 ，他们之差代表总行数
-			sb = new StringBuffer("");
-			sb.append("E:/");
-			sb.append(fileName.split(".xls")[0]+"-");
-			if (sheet.getRow(firstRowIndex) != null
-					&& sheet.getRow(firstRowIndex).getCell(4).toString().length() > 0) {
-				sb.append(sheet.getRow(firstRowIndex).getCell(0).toString().split("-")[0]);
-				sb.append("-");
-				sb.append(sheet.getRow(firstRowIndex).getCell(0).toString().split("-")[1]);
-			}
-			sb.append("考勤表.xls");
+			creatExcleName(sheet,fileName);
+			
 			// 循环读取数据
 			for (int rIndex = firstRowIndex; rIndex <= lastRowIndex; rIndex++) {
 			
@@ -218,6 +201,27 @@ System.out.println(e);
 		return map;
 	}
 
+	
+	/**
+	 * 创建最后生成的excle的名字
+	 * @param sheet
+	 * @param fileName
+	 */
+	private static void creatExcleName(Sheet sheet,String fileName) {
+		 firstRowIndex = sheet.getFirstRowNum() + 1; // 得到第一行的下标，此处加2目的是为了避免读取活动首行
+		 lastRowIndex = sheet.getLastRowNum(); // 得到最后一行的下标 ，他们之差代表总行数
+		sb = new StringBuffer("");
+		sb.append("E:/");
+		sb.append(fileName.split(".xls")[0]+"-");
+		if (sheet.getRow(firstRowIndex) != null
+				&& sheet.getRow(firstRowIndex).getCell(4).toString().length() > 0) {
+			sb.append(sheet.getRow(firstRowIndex).getCell(0).toString().split("-")[0]);
+			sb.append("-");
+			sb.append(sheet.getRow(firstRowIndex).getCell(0).toString().split("-")[1]);
+		}
+		sb.append("考勤表.xls");		
+	}
+
 	/**
 	 * 统计平均工作时长
 	 * (正常考勤时间-1)的平均值
@@ -284,6 +288,12 @@ System.out.println(e);
 		 changeVal = true;
 	}
 
+	/**
+	 * 把统计好的数据写到excle中，文件名根据sb生成
+	 * @param map
+	 * @param fileName  预留字段
+	 * @return
+	 */
 	public static String wirteExcel(Map<String, EmployeeMessage> map,
 			String fileName) {
 		HSSFRow row = null;
@@ -370,11 +380,6 @@ System.out.println(e);
 		// 第六步，将文件存到指定位置
 		try {
 
-			// path = sb.append(UrlInfo.URL_EXCEL + fileName+new
-			// SimpleDateFormat(“yyyy-MM-dd_HH-mm-ss”).format(new
-			// java.util.Date())+”.xls”);
-			// 最好以活动名称和时间作为文件名,UrlInfo.URL_EXCEL代表存放路径，由于文件名称不能有转义等特殊字符，所以日期时间不能用yyyy-MM-dd_HH:mm:ss命名/
-//			File f = new File("E:/考勤表.xls");
 			File f = new File(sb.toString());
 			if (f.exists()) {
 				f.delete();

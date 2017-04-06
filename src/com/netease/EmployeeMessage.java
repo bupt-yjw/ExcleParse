@@ -13,6 +13,8 @@ public class EmployeeMessage {
 	private int timeLessThan9;
 	private int timeAbsence;
 	private int timeIncomplete;
+	private int timeMoreThan9;
+	private double avgWorkTime;
 	
 	public EmployeeMessage(String number, String name,String firstLevDep,String secondLevDep,String thirdLevDep){
 		setNumber(number);
@@ -99,6 +101,22 @@ public class EmployeeMessage {
 
 	public void setTimeAfter950(int timeAfter950) {
 		this.timeAfter950 = timeAfter950;
+	}
+
+	public int getTimeMoreThan9() {
+		return timeMoreThan9;
+	}
+
+	public void setTimeMoreThan9(int timeMoreThan9) {
+		this.timeMoreThan9 = timeMoreThan9;
+	}
+
+	public double getAvgWorkTime() {
+		return avgWorkTime;
+	}
+
+	public void setAvgWorkTime(double avgWorkTime) {
+		this.avgWorkTime = avgWorkTime;
 	}
 	
 
