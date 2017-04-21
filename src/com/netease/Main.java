@@ -38,9 +38,13 @@ public class Main {
 	private static StringBuffer sb ;
 	private static int i=0;//定位错误使用
 	private static double workTimeOfTotal = 0;   //工作总时长
+	/**
+	 * 正常工作的天数
+	 */
 	private static int normalDay = 0;		//正常工作天数
 	private static String jobNumber = null;	//存储工号
 	private static BigDecimal b;
+	private static boolean lastData = false;
 	private static Map<String, EmployeeMessage> map = new HashMap<String, EmployeeMessage>();
 	
 	public static void main(String[] args) {
@@ -60,6 +64,7 @@ public class Main {
 				String[] filelist = file.list();
 				for (int i = 0; i < filelist.length; i++) {
 					File readfile = new File(filepath + "\\" + filelist[i]);
+					//map = new HashMap<String, EmployeeMessage>(); 
 					Map<String, EmployeeMessage> map1 = new HashMap<String, EmployeeMessage>();
 					try {
 						map1 = readExcel(readfile);
@@ -90,8 +95,7 @@ public class Main {
 
 	public static Map<String, EmployeeMessage> readExcel(File file1)
 			throws Exception {
-		
-		
+		 map = new HashMap<String, EmployeeMessage>();
 		Workbook wb = null;
 		try {
 			InputStream inputStream = new FileInputStream(file1);
@@ -118,6 +122,9 @@ public class Main {
 			// 循环读取数据
 			for (int rIndex = firstRowIndex; rIndex <= lastRowIndex; rIndex++) {
 			
+				if(rIndex == lastRowIndex){
+					lastData = true;
+				}
 				Row row = null;
 				try {
 				if (sheet.getRow(rIndex) != null
@@ -227,60 +234,106 @@ System.out.println(e);
 		if(jobNumber == null || jobNumber.length()<=0){
 			jobNumber = number;
 		}
-		if(number.equals(jobNumber)){
-			if (row.getCell(14)==null||row.getCell(14).toString().equals("0.0")
-					||row.getCell(14).toString().equals("")) {
-			}else{
-				workTimeOfTotal += Double.valueOf(row.getCell(14).toString());
-				normalDay +=1;
+		if(lastData){	//最后一个人的数据，由于后面没有别的工号，所以需要单独处理
+			lastData = false;
+System.out.println(row.getCell(0).toString()+row.getCell(1).toString()
+		+ row.getCell(2).toString()+row.getCell(3).toString());
+System.out.println(number+":"+jobNumber);
+System.out.println(workTimeOfTotal+":"+normalDay);
+
+			if(number.equals(jobNumber)){
+				if (row.getCell(14)==null||row.getCell(14).toString().equals("0.0")
+						||row.getCell(14).toString().equals("")) {
+				}else{
+					workTimeOfTotal += Double.valueOf(row.getCell(14).toString());
+					normalDay +=1;
+				}
 			}
-		/*	if(row.getCell(14)!= null){
-				System.out.println(row.getCell(14).toString());
-			}*/
-		}else{
+			
 			if(normalDay == 0){
 				map.get(jobNumber).setAvgWorkTime(0);
 			}else{
 			b = new BigDecimal((workTimeOfTotal-normalDay-map.get(jobNumber).getTimeAfter10())/normalDay);  
 			map.get(jobNumber).setAvgWorkTime(b.setScale(1,BigDecimal.ROUND_HALF_UP).doubleValue());
 		}
-			jobNumber = number;
+			jobNumber = null;//最后一条数据将jobNumber设为null，否则在解析下一个文件的时候会报错。
 			workTimeOfTotal = 0;
 			normalDay = 0;
+			
+		}else{
+			
+			if(number.equals(jobNumber)){
+				if (row.getCell(14)==null||row.getCell(14).toString().equals("0.0")
+						||row.getCell(14).toString().equals("")) {
+				}else{
+					workTimeOfTotal += Double.valueOf(row.getCell(14).toString());
+					normalDay +=1;
+				}
+			/*	if(row.getCell(14)!= null){
+					System.out.println(row.getCell(14).toString());
+				}*/
+			}else{
+				if(normalDay == 0){
+					map.get(jobNumber).setAvgWorkTime(0);
+				}else{
+				b = new BigDecimal((workTimeOfTotal-normalDay-map.get(jobNumber).getTimeAfter10())/normalDay);  
+				map.get(jobNumber).setAvgWorkTime(b.setScale(1,BigDecimal.ROUND_HALF_UP).doubleValue());
+			}
+				jobNumber = number;//把工号变为下一个人的工号
+				workTimeOfTotal = 0;
+				normalDay = 0;
+			}
 		}
+		
 	}
 	
 	/**
 	 * 统计迟到天数
+	 * 	如果刷卡时间在十点以后，那么9：30，9：40，9：50都要进行统计,以此类推
 	 * @param row
 	 */
 	private static void lateDay(Row row) {
-		 if(Integer.valueOf(row.getCell(15).toString()
-					.split(":")[0]) >= 10) {
-				 if(Integer.valueOf(row.getCell(15).toString()
-					.split(":")[1]) > 0){
-					 employeeMessage.setTimeAfter10(employeeMessage
-								.getTimeAfter10() + 1); 
-				 }else{
-					 employeeMessage.setTimeAfter950(employeeMessage
-								.getTimeAfter950() + 1);
-				 }
-			}else if (Integer.valueOf(row.getCell(15).toString()
-					.split(":")[0]) == 9 && Integer.valueOf(row.getCell(15).toString()
-							.split(":")[1]) > 50 ) {
+		if(Integer.valueOf(row.getCell(15).toString()
+				.split(":")[0]) >= 10) {
+			 employeeMessage.setTimeAfter950(employeeMessage
+						.getTimeAfter950() + 1);
+			 employeeMessage.setTimeAfter940(employeeMessage
+						.getTimeAfter940() + 1);
+			 employeeMessage.setTimeAfter930(employeeMessage
+						.getTimeAfter930() + 1);
+			 if(Integer.valueOf(row.getCell(15).toString()
+						.split(":")[1]) > 0){
+						 employeeMessage.setTimeAfter10(employeeMessage
+									.getTimeAfter10() + 1); 
+					 }
+		}else if(Integer.valueOf(row.getCell(15).toString()
+				.split(":")[0]) == 9){
+			if(Integer.valueOf(row.getCell(15).toString()
+					.split(":")[1]) > 50){
 				employeeMessage.setTimeAfter950(employeeMessage
 						.getTimeAfter950() + 1);
-			}else if (Integer.valueOf(row.getCell(15).toString()
-					.split(":")[0]) == 9 && Integer.valueOf(row.getCell(15).toString()
-							.split(":")[1]) > 40 ) {
-				employeeMessage.setTimeAfter940(employeeMessage
+			 employeeMessage.setTimeAfter940(employeeMessage
 						.getTimeAfter940() + 1);
-			}else if (Integer.valueOf(row.getCell(15).toString()
-					.split(":")[0]) == 9 && Integer.valueOf(row.getCell(15).toString()
-							.split(":")[1]) > 30 ) {
-				employeeMessage.setTimeAfter930(employeeMessage
+			 employeeMessage.setTimeAfter930(employeeMessage
 						.getTimeAfter930() + 1);
+			}else if(Integer.valueOf(row.getCell(15).toString()
+					.split(":")[1]) > 40){
+			 employeeMessage.setTimeAfter940(employeeMessage
+						.getTimeAfter940() + 1);
+			 employeeMessage.setTimeAfter930(employeeMessage
+						.getTimeAfter930() + 1);
+			}else if(Integer.valueOf(row.getCell(15).toString()
+					.split(":")[1]) > 30){
+				 employeeMessage.setTimeAfter930(employeeMessage
+							.getTimeAfter930() + 1);
+			}else{
+				employeeMessage.setTimeBefore930(employeeMessage
+						.getTimeBefore930() + 1);
 			}
+		}else{
+			employeeMessage.setTimeBefore930(employeeMessage
+					.getTimeBefore930() + 1);
+		}
 		 changeVal = true;
 	}
 
@@ -314,30 +367,33 @@ System.out.println(e);
 		cell.setCellValue("三级部门");
 		cell.setCellStyle(style);
 		cell = row.createCell(5);
-		cell.setCellValue("9:30后打卡天数");
+		cell.setCellValue("9:30前打卡天数");
 		cell.setCellStyle(style);
 		cell = row.createCell(6);
-		cell.setCellValue("9:40后打卡天数");
+		cell.setCellValue("9:30后打卡天数");
 		cell.setCellStyle(style);
 		cell = row.createCell(7);
-		cell.setCellValue("9:50后打卡天数");
+		cell.setCellValue("9:40后打卡天数");
 		cell.setCellStyle(style);
 		cell = row.createCell(8);
-		cell.setCellValue("10点后打卡天数");
+		cell.setCellValue("9:50后打卡天数");
 		cell.setCellStyle(style);
 		cell = row.createCell(9);
-		cell.setCellValue("有效工作时间不满8小时");
+		cell.setCellValue("10点后打卡天数");
 		cell.setCellStyle(style);
 		cell = row.createCell(10);
-		cell.setCellValue("有效工作时间大于9小时");
+		cell.setCellValue("有效工作时间不满8小时");
 		cell.setCellStyle(style);
 		cell = row.createCell(11);
-		cell.setCellValue("缺勤天数");
+		cell.setCellValue("有效工作时间大于9小时");
 		cell.setCellStyle(style);
 		cell = row.createCell(12);
-		cell.setCellValue("刷卡不完整天数");
+		cell.setCellValue("缺勤天数");
 		cell.setCellStyle(style);
 		cell = row.createCell(13);
+		cell.setCellValue("刷卡不完整天数");
+		cell.setCellStyle(style);
+		cell = row.createCell(14);
 		cell.setCellValue("平均有效工作时长");
 		cell.setCellStyle(style);
 
@@ -355,15 +411,16 @@ System.out.println(e);
 			row.createCell(2).setCellValue(val.getFirstLevDep());
 			row.createCell(3).setCellValue(val.getSecondLevDep());
 			row.createCell(4).setCellValue(val.getThirdLevDep());
-			row.createCell(5).setCellValue(val.getTimeAfter930());
-			row.createCell(6).setCellValue(val.getTimeAfter940());
-			row.createCell(7).setCellValue(val.getTimeAfter950());
-			row.createCell(8).setCellValue(val.getTimeAfter10());
-			row.createCell(9).setCellValue(val.getTimeLessThan9());
-			row.createCell(10).setCellValue(val.getTimeMoreThan9());
-			row.createCell(11).setCellValue(val.getTimeAbsence());
-			row.createCell(12).setCellValue(val.getTimeIncomplete());
-			row.createCell(13).setCellValue(val.getAvgWorkTime());
+			row.createCell(5).setCellValue(val.getTimeBefore930());
+			row.createCell(6).setCellValue(val.getTimeAfter930());
+			row.createCell(7).setCellValue(val.getTimeAfter940());
+			row.createCell(8).setCellValue(val.getTimeAfter950());
+			row.createCell(9).setCellValue(val.getTimeAfter10());
+			row.createCell(10).setCellValue(val.getTimeLessThan9());
+			row.createCell(11).setCellValue(val.getTimeMoreThan9());
+			row.createCell(12).setCellValue(val.getTimeAbsence());
+			row.createCell(13).setCellValue(val.getTimeIncomplete());
+			row.createCell(14).setCellValue(val.getAvgWorkTime());
 
 		}
 

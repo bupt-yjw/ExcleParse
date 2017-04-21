@@ -29,7 +29,11 @@ import org.apache.poi.ss.usermodel.Row;
 import org.apache.poi.ss.usermodel.Sheet;
 import org.apache.poi.ss.usermodel.Workbook;
 import org.apache.poi.xssf.usermodel.XSSFWorkbook;
-
+/**
+ * 不是最新版本，有一些修改没在上面新加
+ * @author bjweiyongjun
+ *
+ */
 public class MainTest {
 	
 	private static String number;  //工号

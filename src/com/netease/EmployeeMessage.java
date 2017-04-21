@@ -6,6 +6,7 @@ public class EmployeeMessage {
 	private String firstLevDep;
 	private String secondLevDep;
 	private String thirdLevDep;
+	private int timeBefore930;
 	private int timeAfter930;
 	private int timeAfter940;
 	private int timeAfter950;
@@ -24,6 +25,14 @@ public class EmployeeMessage {
 		setThirdLevDep(thirdLevDep);
 	}
 	
+	
+	
+	public int getTimeBefore930() {
+		return timeBefore930;
+	}
+	public void setTimeBefore930(int timeBefore930) {
+		this.timeBefore930 = timeBefore930;
+	}
 	public String getNumber() {
 		return number;
 	}
