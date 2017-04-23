@@ -20,11 +20,9 @@ import javax.swing.JFrame;
 
 import org.apache.poi.hssf.usermodel.HSSFCell;
 import org.apache.poi.hssf.usermodel.HSSFCellStyle;
-import org.apache.poi.hssf.usermodel.HSSFDataFormat;
 import org.apache.poi.hssf.usermodel.HSSFRow;
 import org.apache.poi.hssf.usermodel.HSSFSheet;
 import org.apache.poi.hssf.usermodel.HSSFWorkbook;
-import org.apache.poi.ss.usermodel.Cell;
 import org.apache.poi.ss.usermodel.Row;
 import org.apache.poi.ss.usermodel.Sheet;
 import org.apache.poi.ss.usermodel.Workbook;
@@ -37,11 +35,6 @@ public class Main {
 	private static boolean changeVal = false; 	//用来判断是都有数据更新，从而确定是否更新employeeMessage里的字段
 	private static StringBuffer sb ;
 	private static int i=0;//定位错误使用
-	private static double workTimeOfTotal = 0;   //工作总时长
-	/**
-	 * 正常工作的天数
-	 */
-	private static int normalDay = 0;		//正常工作天数
 	private static String jobNumber = null;	//存储工号
 	private static BigDecimal b;
 	private static boolean lastData = false;
@@ -64,7 +57,6 @@ public class Main {
 				String[] filelist = file.list();
 				for (int i = 0; i < filelist.length; i++) {
 					File readfile = new File(filepath + "\\" + filelist[i]);
-					//map = new HashMap<String, EmployeeMessage>(); 
 					Map<String, EmployeeMessage> map1 = new HashMap<String, EmployeeMessage>();
 					try {
 						map1 = readExcel(readfile);
@@ -81,16 +73,6 @@ public class Main {
 			}
 		});
 
-		/*File file = new File("E:/1.xls");
-
-		try {
-			Map<String, EmployeeMessage> map1 = new HashMap<String, EmployeeMessage>();
-			map1 = readExcel(file);
-			System.out.println("length" + map1.size());
-			wirteExcel(map1, "wyj");
-		} catch (Exception e) {
-			e.printStackTrace();
-		}*/
 	}
 
 	public static Map<String, EmployeeMessage> readExcel(File file1)
@@ -148,7 +130,7 @@ public class Main {
 					
 					employeeMessage = map.get(number);
 					
-					avgWorkTime(row);
+					//avgWorkTime(row);
 					
 					if (row.getCell(2).toString().contains("旷工")) {
 						employeeMessage.setTimeAbsence(employeeMessage
@@ -161,7 +143,6 @@ public class Main {
 					} else if (row.getCell(2).toString().contains("缺下")) {
 						lateDay(row);
 						
-						
 						employeeMessage.setTimeIncomplete(employeeMessage
 								.getTimeIncomplete() + 1);
 						map.put(number, employeeMessage);
@@ -170,10 +151,9 @@ public class Main {
 								.getTimeIncomplete() + 1);
 						map.put(number, employeeMessage);
 					} else {
-						
+						avgWorkTime(row);
 							if (row.getCell(14)==null||row.getCell(14).toString().equals("0")
 									||row.getCell(14).toString().equals("")|| row.getCell(15).toString().length() <= 0) {
-
 							} else {
 								if( (Double.valueOf(row.getCell(14).toString())
 										.compareTo(9.0) < 0)||(Integer.valueOf(row.getCell(15).toString()
@@ -231,15 +211,23 @@ System.out.println(e);
 	 * @param row
 	 */
 	private static void avgWorkTime(Row row){
-		if(jobNumber == null || jobNumber.length()<=0){
+		if (row.getCell(14)==null||row.getCell(14).toString().equals("0.0")
+				||row.getCell(14).toString().equals("")) {
+		}else{
+			//先按正常时间统计，在写入的时候在减去1小时
+			employeeMessage.setWorkTimeOfTotal(employeeMessage.getWorkTimeOfTotal()+ Double.valueOf(row.getCell(14).toString())) ;
+			employeeMessage.setWorkTime(employeeMessage.getWorkTime()+1);
+		}
+
+
+
+
+//原先统计依赖于顺序
+	/*	if(jobNumber == null || jobNumber.length()<=0){
 			jobNumber = number;
 		}
 		if(lastData){	//最后一个人的数据，由于后面没有别的工号，所以需要单独处理
 			lastData = false;
-System.out.println(row.getCell(0).toString()+row.getCell(1).toString()
-		+ row.getCell(2).toString()+row.getCell(3).toString());
-System.out.println(number+":"+jobNumber);
-System.out.println(workTimeOfTotal+":"+normalDay);
 
 			if(number.equals(jobNumber)){
 				if (row.getCell(14)==null||row.getCell(14).toString().equals("0.0")
@@ -261,7 +249,6 @@ System.out.println(workTimeOfTotal+":"+normalDay);
 			normalDay = 0;
 			
 		}else{
-			
 			if(number.equals(jobNumber)){
 				if (row.getCell(14)==null||row.getCell(14).toString().equals("0.0")
 						||row.getCell(14).toString().equals("")) {
@@ -269,9 +256,6 @@ System.out.println(workTimeOfTotal+":"+normalDay);
 					workTimeOfTotal += Double.valueOf(row.getCell(14).toString());
 					normalDay +=1;
 				}
-			/*	if(row.getCell(14)!= null){
-					System.out.println(row.getCell(14).toString());
-				}*/
 			}else{
 				if(normalDay == 0){
 					map.get(jobNumber).setAvgWorkTime(0);
@@ -283,7 +267,7 @@ System.out.println(workTimeOfTotal+":"+normalDay);
 				workTimeOfTotal = 0;
 				normalDay = 0;
 			}
-		}
+		}*/
 		
 	}
 	
@@ -420,7 +404,12 @@ System.out.println(workTimeOfTotal+":"+normalDay);
 			row.createCell(11).setCellValue(val.getTimeMoreThan9());
 			row.createCell(12).setCellValue(val.getTimeAbsence());
 			row.createCell(13).setCellValue(val.getTimeIncomplete());
-			row.createCell(14).setCellValue(val.getAvgWorkTime());
+			if(val.getWorkTime() == 0){
+				row.createCell(14).setCellValue(0);
+			}else{
+				b = new BigDecimal((val.getWorkTimeOfTotal()-val.getWorkTime()-val.getTimeAfter10())/val.getWorkTime());
+				row.createCell(14).setCellValue(b.setScale(1,BigDecimal.ROUND_HALF_UP).doubleValue());
+			}
 
 		}
 

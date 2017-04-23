@@ -15,7 +15,8 @@ public class EmployeeMessage {
 	private int timeAbsence;
 	private int timeIncomplete;
 	private int timeMoreThan9;
-	private double avgWorkTime;
+	private double workTimeOfTotal;//记录平均有效工作总时长
+	private int workTime;//记录有效工作的天数
 	
 	public EmployeeMessage(String number, String name,String firstLevDep,String secondLevDep,String thirdLevDep){
 		setNumber(number);
@@ -120,13 +121,19 @@ public class EmployeeMessage {
 		this.timeMoreThan9 = timeMoreThan9;
 	}
 
-	public double getAvgWorkTime() {
-		return avgWorkTime;
+	public double getWorkTimeOfTotal() {
+		return workTimeOfTotal;
 	}
 
-	public void setAvgWorkTime(double avgWorkTime) {
-		this.avgWorkTime = avgWorkTime;
+	public void setWorkTimeOfTotal(double workTimeOfTotal) {
+		this.workTimeOfTotal = workTimeOfTotal;
 	}
-	
 
+	public int getWorkTime() {
+		return workTime;
+	}
+
+	public void setWorkTime(int workTime) {
+		this.workTime = workTime;
+	}
 }
